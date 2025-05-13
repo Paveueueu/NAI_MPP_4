@@ -2,15 +2,16 @@ import argparse
 import csv
 import sys
 import plot
+from point import Point
 
 import k_means
 
 
-def load_points(path: str) -> list[list[float]]:
+def load_points(path: str) -> list[Point]:
     points = []
     with open(path) as file:
         for row in csv.reader(file):
-            points.append([float(x) for x in row])
+            points.append(Point([float(x) for x in row]))
     return points
 
 
@@ -28,25 +29,26 @@ def main():
     points = load_points(file_path)
     print("Loaded points")
 
+    if len(points) < k:
+        raise ValueError("Number of points must be greater than 'k'.")
+
     km_gen = k_means.k_means(points, k)
     result_centroids = []
-    result_points = []
 
     try:
         for i in range(sys.maxsize):
-            cen, pts = next(km_gen)
+            res = next(km_gen)
 
             print(f"\nIteration {i}")
-            result_centroids.append(cen)
-            result_points.append(pts)
+            result_centroids.append(res)
 
-            for c, p in zip(cen, pts):
-                print(f"Centroid {c} ----- Points {p}")
+            for c in res:
+                print(f"Centroid {c.centroid.coordinates} ----- Points {[p.coordinates for p in c.assigned]}")
 
     except StopIteration:
         print("Finished")
 
-    plot.show(result_centroids[-1], result_points[-1])
+    plot.show(result_centroids[-1])
 
 
 if __name__ == '__main__':

@@ -1,67 +1,42 @@
-import copy
 import random
-
-
-def get_centroid(points: list[list[float]]):
-    if len(points) == 0:
-        return None
-
-    n = len(points[0])
-    if n == 0:
-        return None
-
-    for p in points:
-        if len(p) != n:
-            return None
-
-    cen = []
-    for attr in range(n):
-        cen.append(sum([p[attr] for p in points]) / len(points))
-    return cen
-
-
-def assign(points, centroids) -> list[list[list[float]]]:
-    assignments = [[] for _ in range(len(centroids))]
-
-    for p in points:
-        distances = []
-        for c in centroids:
-            dist = sum([(x - y)**2 for (x, y) in zip(p, c)])
-            distances.append(dist)
-
-        min_index = distances.index(min(distances))
-        assignments[min_index].append(p)
-
-    return assignments
-
+from point import Centroid
 
 
 def k_means(points, k):
-    # random assignment to centroids at first
-    assignments = [[] for _ in range(k)]
-    for point, cen in zip(points, random.sample(range(k), k)):
-        assignments[cen].append(point)
+    # assign each point to random number in range [0, k-1]
+    assignments = [[points[i]] for i in range(k)]
+    for p in points[k:]:
+        idx = random.randint(0, k - 1)
+        assignments[idx].append(p)
 
-    # get initial centroid for each group
-    centroids = []
-    for pts in assignments:
-        centroids.append(get_centroid(pts))
+    # create 'k' centroids, each with points from matching group, coordinates of centroid are updated
+    centroids = [
+        Centroid(assignments[i])
+        for i in range(k)
+    ]
 
-    # assign each point to the closest centroid
-    previous_assignments = copy.deepcopy(assignments)
-    assignments = assign(points, centroids)
+    yield centroids
 
-    # yield first iteration
-    yield centroids, assignments
+    # continue until centroids keep changing coordinates
+    while any(c.has_changed() for c in centroids):
+        # remove previous assignments
+        for c in centroids:
+            c.remove_assignments()
+
+        # assign each point to the closest centroid
+        for p in points:
+            distances = []
+            for c in centroids:
+                distances.append(c.distance_to(p))
+
+            min_distance = min(distances)
+            min_index = distances.index(min_distance)
+
+            centroids[min_index].assign(p)
+
+        for c in centroids:
+            c.update_coordinates()
+
+        yield centroids
 
 
-    # do the algorithm until nothing new happens
-    while previous_assignments != assignments:
-        centroids = []
-        for pts in assignments:
-            centroids.append(get_centroid(pts))
-
-        previous_assignments = copy.deepcopy(assignments)
-        assignments = assign(points, centroids)
-
-        yield centroids, assignments

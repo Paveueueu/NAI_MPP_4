@@ -1,18 +1,18 @@
 import matplotlib.pyplot as plt
 
-def show(cen, pts):
+from point import Centroid
+
+
+def show(centroids: list[Centroid]):
 
     plt.figure(figsize=(6, 6))
 
-    for i, (centroid, points) in enumerate(zip(cen, pts)):
+    for i, c in enumerate(centroids):
         color = plt.color_sequences['Set1'][i]
-        print(plt.color_sequences)
-        cx, cy = centroid
+        plt.scatter(c.centroid[0], c.centroid[1], color=color, s=200, marker='X', label=f'Centroid {i + 1}')
 
-        plt.scatter(cx, cy, color=color, s=200, marker='X', label=f'Centroid {i + 1}')
-
-        px, py = zip(*points)
-        plt.scatter(px, py, color=color, s=100)
+        for p in c.assigned:
+            plt.scatter(p.coordinates[0], p.coordinates[1], color=color, s=100)
 
     plt.xlabel('X')
     plt.ylabel('Y')
